@@ -1,0 +1,67 @@
+DDP-Week4-ReproduciblePitch
+========================================================
+author: Jay Cho
+date: 03/11/2017
+autosize: true
+
+World Population Exploration
+========================================================
+
+This project explores the world population in 1960 - 2015 based on population data from World Bank Data, made into a Shiny app to display population density infographically
+
+The steps involved are as following:
+- Download data & pre-process (Available in detail in R Markdown file at Github)
+- Add geographic coordinate system to be able to display location info in Leaflet (Available in detail in R Markdown file)
+- Map the completed info to Leaflet & Shiny
+
+In the slides to follow, we will go over how each step was approached, followed by a simple data exploration as to which country had the most population in each year.
+
+Data Load 
+========================================================
+- Will import cleaned data and do some basic analysis
+```{r}
+library(tidyverse)
+
+popdata <- read.csv("popdata_cleaned.csv")
+
+popdata %>%
+  select(-c(lon,lat)) %>% #Removing lon and lat
+  str()
+
+
+
+```
+
+Adding Geocode for Leaflet
+===================
+- To add longitude and latitude, the [geocode](https://www.rdocumentation.org/packages/ggmap/versions/2.6.1/topics/geocode) function of [ggmap package](https://www.rdocumentation.org/packages/ggmap/versions/2.6.1) was mapped to each row by the [map function](https://www.rdocumentation.org/packages/purrr/versions/0.2.2/topics/map) from [purrr package](https://www.rdocumentation.org/packages/purrr/versions/0.2.2).
+
+- In the example below, the code is shown if we were to run for the first 3 countries (as the process takes long if we were to run on the whole dataset.) The data being used in Shiny app had the geocode function run on all rows.
+```{r, eval = FALSE}
+
+
+df %>%
+  slice(1:3) %>% #Keeping the first three rows
+  select(Country.Name) %>% #Selecting country name to pass to map function
+  as.character() %>% #changing to characters from factors
+  map_df(geocode) -> #Mapping to geocode function
+  geo_code_data
+
+```
+
+
+
+Let's check which country has the highest population per year
+========================================================
+
+```{r}
+df <- popdata %>%
+  select(-c(lon,lat)) 
+
+popdata[unlist(apply(df, 2, which.max)),1] #Finding max population per column and print the corresponding country name
+  
+```
+
+- Looks like China had the highest population ever since 1960 (to 2015 hence 56 years total).
+- More interactive information available at Shiny app
+
