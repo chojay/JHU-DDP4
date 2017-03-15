@@ -1,0 +1,124 @@
+---
+title: "Developing Data Products-Week4"
+author: "Jay Cho"
+date: "February 27, 2017"
+output: ioslides_presentation
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+## Introduction
+* Where are the top 10 countries with fastest population growth rate located?
+
+In this study, we will look into where are the 10 countries with fastest population growth rate are locate using the dataset provided from [worldbank.org](http://data.worldbank.org/indicator/SP.POP.TOTL)
+```{r}
+library(tidyverse)
+
+url <- "http://api.worldbank.org/v2/en/indicator/SP.POP.TOTL?downloadformat=csv" #Downloading the file from Worldbank Website
+download.file(url, "dummy_file_name.zip", method = "curl") #Downloading the file
+list_of_files <- unzip("dummy_file_name.zip", list = TRUE) #Checking the list of files available.
+list_of_files #The file of our interest is the one with biggest size, 'API_SP.POP.TOTL_DS2_en_csv_v2.csv' which is 2nd from the 1st list. 
+check_data <- readLines(unzip("dummy_file_name.zip", files = list_of_files[[1]][2])) #Selecting the data to extract, using 'readLines' to check whether we can import directly to a dataframe
+check_data
+
+#Looks like it's a csv file but with first 4 lines being a descriptive lines. We'll thus have to import after skipping the first 4 lines, and 5th line being a header:
+pop_data <- read.csv(unzip("dummy_file_name.zip", files = list_of_files[[1]][2]), 
+                     header = TRUE,
+                     skip = 4)
+
+pop_data #Checking whether the data have been imported correctly
+
+
+#Since the data have been imported correctly, we can remove dummy variables:
+rm(list_of_files, check_data, url)
+```
+Now that the data have been imported correctly. We can start investigating into populations.
+
+```{r}
+
+library(ggmap)
+library(purrr)
+
+pop_data$Country.Name %>% #Mapping country names to geocode function of ggmap to obtain geocode (longitude and latitude) data
+  as.character() %>%
+  map_df(geocode) ->
+  geo_code_data
+
+
+pop_data_geoadded <- cbind(pop_data, geo_code_data) #Binding Country name to Geospatial data
+
+colnames(pop_data_geoadded) #Checking Column Names
+
+pop_data_geoadded <- pop_data_geoadded %>% select(-X) #Exlucing 'X' Column
+colnames(pop_data_geoadded) <- stringr::str_replace(colnames(pop_data_geoadded),"X","Year_") #Removing 'X' before the years in the column name
+
+
+
+pop_data_geoadded #Cleaned Data
+
+```
+
+```{r Testing Leaflet}
+library(leaflet)
+
+pop_data_geoadded %>% 
+  leaflet() %>%
+  addTiles() %>%
+  addMarkers(clusterOptions = markerClusterOptions())
+
+
+pop_data_geoadded %>%
+  gather(YearInfo, Pop, Year_1960:Year_2016) %>%
+  filter(Pop < 667070000) %>%
+  filter(Pop > 92540534) 
+
+
+pop_data_geoadded %>%
+  leaflet() %>%
+  addTiles() %>%
+  addCircles(weight = 1, radius = sqrt(pop_data_geoadded$`1975`)*10, popup = paste0(pop_data_geoadded$Country.Name,"=",pop_data_geoadded$`1975`))
+```
+
+
+
+```{r Further Data Cleaning}
+
+
+#Need to remove some non-country entries manually:
+
+codes_to_remove <- c("ARB","CEB","Css","EAP","EAR","EAS","ECA","ECS","EMU","EUU","FCS","HIC","HPC","IBD","IBT","IDA","IDB","IDN","IDX","INX","LAC", "LCN","LDC","LIC","LMC","LMY","LTE","MIC","MEA","MNA","NAC","OED","OSS","PRE","PSS","PST","SAS","SSA","SSF","SST","TEA","TEC","TLA","TMN","TSA","TSS","UMC","PSE",
+                     "WLD")
+
+
+
+non_country_filtered_data <- pop_data_geoadded %>%
+  filter(!Country.Code %in% codes_to_remove) 
+
+
+#Leaflet Test
+library(leaflet)  
+
+non_country_filtered_data %>%
+  leaflet() %>%
+  addTiles() %>%
+  addCircles(weight = 1, radius = sqrt(non_country_filtered_data$Year_1960)*30, popup = paste0(non_country_filtered_data$Country.Name,"=",non_country_filtered_data$Year_1960))
+
+
+
+```
+
+
+
+```{r Last Data Cleaning & Saving}
+non_country_filtered_data2 <- non_country_filtered_data %>% #Removing Year 2016 as the entire column is empty
+  select(-Year_2016)
+
+write.csv(non_country_filtered_data2, "popdata_cleaned.csv", row.names = FALSE)
+
+read.csv("popdata_cleaned.csv") %>%
+  select(-Indicator.Name, -Indicator.Code) %>%
+  write.csv("popdata_cleaned2.csv")
+```
+

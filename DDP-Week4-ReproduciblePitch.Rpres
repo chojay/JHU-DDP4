@@ -63,5 +63,5 @@ popdata[unlist(apply(df, 2, which.max)),1] #Finding max population per column an
 ```
 
 - Looks like China had the highest population ever since 1960 (to 2015 hence 56 years total).
-- More interactive information available at Shiny app
+- More information available at Shiny app and [Github](https://github.com/chojay/JHU-DDP4)
 

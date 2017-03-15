@@ -1,0 +1,11 @@
+name: jhu-ddp4
+title: JHU-DDP4
+account: jaycholrc
+server: shinyapps.io
+appId: 162911
+bundleId: 742556
+url: https://jaycholrc.shinyapps.io/jhu-ddp4/
+when: 1489226303.54982
+asMultiple: FALSE
+asStatic: FALSE
+ignoredFiles: DDP-Week4-ReproduciblePitch-rpubs.html|DDP-Week4-ReproduciblePitch.md|DDP-Week4-ReproduciblePitch.Rpres|DDP-Week4-ReproduciblePitch-figure/unnamed-chunk-2-1.png
